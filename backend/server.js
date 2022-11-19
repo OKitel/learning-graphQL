@@ -5,10 +5,22 @@ const mongoose = require("mongoose");
 const { PubSub } = require("apollo-server");
 const { createServer } = require("http");
 require("dotenv").config();
+const { sectionResolvers, sectionTypeDefs } = require("./section");
+const sectionModel = require("./section/model");
 
-const typeDefs = gql``;
+const typeDefs = gql`
+  ${cardTypeDefs}
+`;
 
-const resolvers = {};
+const customResolvers = {
+  Section: {
+    cards(parent, args, cxt) {
+      return cxt.card.getCardBySectionId(parent._id);
+    },
+  },
+};
+
+const resolvers = merge(sectionResolvers);
 
 const MONGO_USER = process.env.MONGO_USER || "root";
 const MONGO_PASS = process.env.MONGODB_PASS;
@@ -26,11 +38,15 @@ mongoose
     const server = new ApolloServer({
       typeDefs,
       resolvers,
+      context: () => ({
+        card: cardModel,
+        section: sectionModel,
+      }),
     });
     const app = express();
     server.applyMiddleware({ app });
     const httpServer = createServer(app);
-
+    server.installSubscriptionHandlers(httpServer);
     const PORT = process.env.PORT || 4444;
     httpServer.listen({ port: PORT }, () => {
       console.log(`Server is running in port ${PORT}`);
