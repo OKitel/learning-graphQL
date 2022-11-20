@@ -9,11 +9,42 @@ const { sectionResolvers, sectionTypeDefs } = require("./section");
 const { cardResolvers, cardTypeDefs } = require("./card");
 const sectionModel = require("./section/model");
 const cardModel = require("./card/model");
+const SUBSCRIPTION_CONSTANTS = require("./subscriptionConstants");
 
 const typeDefs = gql`
+  type Subscription {
+    sectionAdded: Section
+    cardAdded: Card
+    onSectionPosChange: Section
+    onCardPosChange: Card
+  }
+
   ${cardTypeDefs}
   ${sectionTypeDefs}
 `;
+
+const pubsub = new PubSub();
+
+const SubscriptionResolvers = {
+  Subscription: {
+    sectionAdded: {
+      subscribe: () =>
+        pubsub.asyncIterator([SUBSCRIPTION_CONSTANTS.SECTION_ADDED]),
+    },
+    cardAdded: {
+      subscribe: () =>
+        pubsub.asyncIterator([SUBSCRIPTION_CONSTANTS.CARD_ADDED]),
+    },
+    onSectionPosChange: {
+      subscribe: () =>
+        pubsub.asyncIterator([SUBSCRIPTION_CONSTANTS.ON_SECTION_POS_CHANGE]),
+    },
+    onCardPosChange: {
+      subscribe: () =>
+        pubsub.asyncIterator([SUBSCRIPTION_CONSTANTS.ON_CARD_POS_CHANGE]),
+    },
+  },
+};
 
 const customResolvers = {
   Section: {
@@ -23,7 +54,12 @@ const customResolvers = {
   },
 };
 
-const resolvers = merge(cardResolvers, sectionResolvers, customResolvers);
+const resolvers = merge(
+  cardResolvers,
+  sectionResolvers,
+  customResolvers,
+  SubscriptionResolvers
+);
 
 const MONGO_USER = process.env.MONGO_USER || "root";
 const MONGO_PASS = process.env.MONGODB_PASS;
@@ -38,18 +74,26 @@ mongoose
   )
   .then(() => {
     console.log("mongodb connected successfully");
+
     const server = new ApolloServer({
       typeDefs,
       resolvers,
       context: () => ({
         card: cardModel,
         section: sectionModel,
+        publisher: pubsub,
+        SUBSCRIPTION_CONSTANTS: SUBSCRIPTION_CONSTANTS,
       }),
     });
+
     const app = express();
+
     server.applyMiddleware({ app });
+
     const httpServer = createServer(app);
+
     server.installSubscriptionHandlers(httpServer);
+
     const PORT = process.env.PORT || 4444;
     httpServer.listen({ port: PORT }, () => {
       console.log(`Server is running in port ${PORT}`);
