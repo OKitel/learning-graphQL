@@ -6,10 +6,13 @@ const { PubSub } = require("apollo-server");
 const { createServer } = require("http");
 require("dotenv").config();
 const { sectionResolvers, sectionTypeDefs } = require("./section");
+const { cardResolvers, cardTypeDefs } = require("./card");
 const sectionModel = require("./section/model");
+const cardModel = require("./card/model");
 
 const typeDefs = gql`
   ${cardTypeDefs}
+  ${sectionTypeDefs}
 `;
 
 const customResolvers = {
@@ -20,7 +23,7 @@ const customResolvers = {
   },
 };
 
-const resolvers = merge(sectionResolvers);
+const resolvers = merge(cardResolvers, sectionResolvers, customResolvers);
 
 const MONGO_USER = process.env.MONGO_USER || "root";
 const MONGO_PASS = process.env.MONGODB_PASS;
