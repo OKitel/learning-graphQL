@@ -1,5 +1,4 @@
 const Mongoose = require("mongoose");
-const { isNumberObject } = require("util/types");
 const cardSchema = new Mongoose.Schema(
   {
     title: {
@@ -37,7 +36,7 @@ class Card {
   static updatePos(cardId, pos, sectionId) {
     return this.findOneAndUpdate(
       {
-        _id: Mongoose.mongo.ObjectId(caredId),
+        _id: Mongoose.mongo.ObjectId(cardId),
       },
       { $set: { pos, sectionId } }
     ).exec();

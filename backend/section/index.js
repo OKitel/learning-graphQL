@@ -24,7 +24,6 @@ const sectionTypeDefs = gql`
   }
 
   extend type Query {
-    hello: String
     fetchSections: [Section]
   }
 

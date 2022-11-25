@@ -48,7 +48,7 @@ const SubscriptionResolvers = {
 
 const customResolvers = {
   Section: {
-    cards(parent, args, cxt) {
+    cards(parent, _, cxt) {
       return cxt.card.getCardBySectionId(parent._id);
     },
   },
